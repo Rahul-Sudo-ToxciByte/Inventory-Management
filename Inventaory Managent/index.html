@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inventory Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+    <style>
+      body {
+        background: url('https://wallpapercave.com/wp/wp2757874.gif') no-repeat center center fixed;
+        background-size: cover;
+        position: relative;
+        animation: backgroundMove 10s linear infinite;
+      }
+      @keyframes backgroundMove {
+        0% {
+          background-position: 0% 0%;
+        }
+        50% {
+          background-position: 100% 100%;
+        }
+        100% {
+          background-position: 0% 0%;
+        }
+      }
+      .page {
+        display: none;
+      }
+      .page.active {
+        display: block;
+      }
+      /* Cart animations */
+      .price-change {
+        transition: all 0.2s ease-in-out;
+      }
+      .quantity-change {
+        animation: pulse 0.2s ease-in-out;
+      }
+      .removing {
+        animation: slideOut 0.2s ease-in-out;
+      }
+      /* Product box hover animation */
+      .product-card {
+        transition: transform 0.15s ease-in-out;
+      }
+      .product-card:hover {
+        transform: scale(1.05);
+      }
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.2);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      @keyframes slideOut {
+        0% {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        100% {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex">
+            <div class="flex-shrink-0 flex items-center">
+              <!-- Marvel-style A logo -->
+              <span class="inline-block align-middle mr-2" onclick="window.location.reload()">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="20" cy="20" r="19" fill="white" stroke="#d32f2f" stroke-width="2"/>
+                  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-family="'Bangers', Impact, 'Arial Black', cursive, sans-serif" font-size="28" fill="#d32f2f" font-weight="bold">A</text>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <!-- Desktop Menu -->
+          <div class="flex items-center space-x-4">
+            <a
+              href="#"
+              onclick="uiManager.navigateTo('dashboard')"
+              class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+              >Dashboard</a
+            >
+            <a
+              href="#"
+              onclick="uiManager.navigateTo('inventory')"
+              class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+              >Inventory</a
+            >
+            <a
+              href="#"
+              onclick="uiManager.navigateTo('shop')"
+              class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+              >Shop</a
+            >
+            <a
+              href="#"
+              onclick="uiManager.navigateTo('profit-loss')"
+              class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+              >Profit/Loss</a
+            >
+            <button
+              onclick="uiManager.toggleCart()"
+              class="relative text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+            >
+              <i class="fas fa-shopping-cart"></i>
+              <span
+                id="cartBadge"
+                class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                >0</span
+              >
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Dashboard Page -->
+      <div id="dashboard" class="page-content">
+        <!-- Inventory Status Overview -->
+        <div class="mb-6 bg-white rounded-lg shadow p-4">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Inventory Status Overview</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-blue-50 p-4 rounded-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-sm font-medium text-blue-800">Total Inventory Value</h3>
+                  <p id="totalInventoryValue" class="text-2xl font-semibold text-blue-600">₹0.00</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <i class="fas fa-rupee-sign text-blue-600 text-xl"></i>
+                </div>
+              </div>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-sm font-medium text-purple-800">Categories</h3>
+                  <p id="totalCategories" class="text-2xl font-semibold text-purple-600">0</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                  <i class="fas fa-tags text-purple-600 text-xl"></i>
+                </div>
+              </div>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-sm font-medium text-green-800">Total Products</h3>
+                  <p id="totalProducts" class="text-2xl font-semibold text-green-600">0</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <i class="fas fa-box text-green-600 text-xl"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventory Table -->
+        <div class="mt-8">
+          <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody" class="bg-white divide-y divide-gray-200">
+                <!-- Table rows will be dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Inventory Management Section -->
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+          <div class="flex justify-between items-center">
+            <h3 class="text-lg font-medium text-gray-900">Inventory Management</h3>
+            <button onclick="uiManager.resetProducts()" 
+              class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+              <i class="fas fa-sync-alt mr-2"></i>Reset Products
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inventory Page -->
+      <div id="inventory" class="page-content hidden">
+        <div class="bg-white rounded-lg shadow p-4 mb-8">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Inventory Status Overview</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-blue-50 p-4 rounded-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-sm font-medium text-blue-800">Total Inventory Value</h3>
+                  <p id="totalInventoryValueInv" class="text-2xl font-semibold text-blue-600">₹0.00</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <i class="fas fa-rupee-sign text-blue-600 text-xl"></i>
+                </div>
+              </div>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-sm font-medium text-purple-800">Categories</h3>
+                  <p id="totalCategoriesInv" class="text-2xl font-semibold text-purple-600">0</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                  <i class="fas fa-tags text-purple-600 text-xl"></i>
+                </div>
+              </div>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-sm font-medium text-green-800">Total Products</h3>
+                  <p id="totalProductsInv" class="text-2xl font-semibold text-green-600">0</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <i class="fas fa-box text-green-600 text-xl"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-6">
+          <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            Inventory Management
+          </h2>
+          
+
+          <!-- Add Item Form -->
+          <form
+            id="addItemForm"
+            onsubmit="uiManager.handleAddProduct(event)"
+            class="mb-8"
+          >
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div>
+                <label
+                  for="productName"
+                  class="block text-sm font-medium text-gray-700"
+                  >Product Name <span class="text-red-500">*</span></label
+                >
+                <input
+                  type="text"
+                  id="productName"
+                  name="productName"
+                  required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+                <p class="mt-1 text-sm text-red-500 hidden" id="nameError">Please enter a product name</p>
+              </div>
+              <div>
+                <label
+                  for="productCategory"
+                  class="block text-sm font-medium text-gray-700"
+                  >Category <span class="text-red-500">*</span></label
+                >
+                <select
+                  id="productCategory"
+                  name="productCategory"
+                  required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                  <option value="" disabled selected>Select a category</option>
+                  <option value="Groceries">Groceries</option>
+                </select>
+                <p class="mt-1 text-sm text-red-500 hidden" id="categoryError">Please select a category</p>
+              </div>
+              <div>
+                <label
+                  for="productPrice"
+                  class="block text-sm font-medium text-gray-700"
+                  >Price (₹) <span class="text-red-500">*</span></label
+                >
+                <input
+                  type="number"
+                  id="productPrice"
+                  name="productPrice"
+                  step="0.01"
+                  required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+                <p class="mt-1 text-sm text-red-500 hidden" id="priceError">Please enter a valid price</p>
+              </div>
+              <div>
+                <label
+                  for="productQuantity"
+                  class="block text-sm font-medium text-gray-700"
+                  >Quantity <span class="text-red-500">*</span></label
+                >
+                <input
+                  type="number"
+                  id="productQuantity"
+                  name="productQuantity"
+                  required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+                <p class="mt-1 text-sm text-red-500 hidden" id="quantityError">Please enter a valid quantity</p>
+              </div>
+              <div class="md:col-span-2">
+                <label
+                  for="productDescription"
+                  class="block text-sm font-medium text-gray-700"
+                  >Description <span class="text-red-500">*</span></label
+                >
+                <textarea
+                  id="productDescription"
+                  name="productDescription"
+                  rows="1"
+                  style="resize: none;"
+                  required
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                ></textarea>
+                <p class="mt-1 text-sm text-red-500 hidden" id="descriptionError">Please enter a product description</p>
+              </div>
+            </div>
+            <div class="mt-6">
+              <button
+                type="submit"
+                class="w-full md:w-auto bg-green-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Add Product
+              </button>
+            </div>
+          </form>
+                  <!-- Table rows will be populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shop Page -->
+      <div id="shop" class="page-content hidden">
+        <div class="mb-6 mx-auto px-[95px]">
+          <div class="flex justify-end items-center mb-8 mr-0">
+            <div class="flex space-x-4">
+              <input type="text" id="searchInput" placeholder="Search products..." class="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <select id="categoryFilter" class="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="all">All Categories</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <div class="grid grid-cols-5 gap-4" id="productsGrid">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profit/Loss Page -->
+      <div id="profit-loss" class="page-content hidden">
+        <main class="max-w-7xl mx-auto py-0 sm:px-6 lg:px-8">
+          <div class="px-4 py-0 sm:px-0">
+            <div class="flex justify-between items-center mb-8">
+              <h2 class="text-2xl font-bold text-gray-900">
+                Profit/Loss Analysis
+              </h2>
+              <button
+                onclick="uiManager.clearProfitLoss()"
+                class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                <i class="fas fa-trash mr-2"></i>Clear All Data
+              </button>
+            </div>
+            <!-- Overall Statistics -->
+            <div
+              class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8"
+            >
+              <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                      <i
+                        class="fas fa-money-bill-wave text-3xl text-green-600"
+                      ></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-0">
+                      <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">
+                          Total Revenue
+                        </dt>
+                        <dd
+                          id="totalRevenue"
+                          class="text-lg font-medium text-gray-900"
+                        >
+                          ₹0.00
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                      <i class="fas fa-shopping-cart text-3xl text-red-600"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                      <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">
+                          Total Cost
+                        </dt>
+                        <dd
+                          id="totalCost"
+                          class="text-lg font-medium text-gray-900"
+                        >
+                          ₹0.00
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                      <i class="fas fa-chart-line text-3xl text-blue-600"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                      <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">
+                          Total Profit
+                        </dt>
+                        <dd
+                          id="totalProfit"
+                          class="text-lg font-medium text-gray-900"
+                        >
+                          ₹0.00
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                      <i class="fas fa-percentage text-3xl text-purple-600"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                      <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">
+                          Profit Margin
+                        </dt>
+                        <dd
+                          id="profitMargin"
+                          class="text-lg font-medium text-gray-900"
+                        >
+                          0%
+                        </dd>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Category-wise Analysis -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+              <div class="px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                  Category-wise Analysis
+                </h3>
+              </div>
+              <div class="border-t border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Category
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Items
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Revenue
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Cost
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Profit
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Margin
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody
+                    id="categoryAnalysisTableBody"
+                    class="bg-white divide-y divide-gray-200"
+                  >
+                    <!-- Category analysis rows will be dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Item-wise Profit/Loss -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+              <div class="px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                  Item-wise Profit/Loss
+                </h3>
+              </div>
+              <div class="border-t border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Item
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Category
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Quantity
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Total Cost
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Total Revenue
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Profit/Loss
+                      </th>
+                      <th
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Margin
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody
+                    id="profitLossTableBody"
+                    class="bg-white divide-y divide-gray-200"
+                  >
+                    <!-- Profit/loss rows will be dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div id="cartSidebar" class="fixed top-0 right-0 w-96 h-full bg-white shadow-lg transform translate-x-full transition-transform duration-300 ease-in-out z-50">
+      <div class="h-full flex flex-col">
+        <div class="p-4 border-b">
+          <div class="flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-900">Shopping Cart</h2>
+            <button onclick="uiManager.closeCart()" class="text-gray-500 hover:text-gray-700">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div id="cartItems" class="flex-1 overflow-y-auto">
+          <!-- Cart items will be dynamically populated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="html/data.js"></script>
+    <script src="html/ui.js"></script>
+    <script>
+      // Initialize the application when the DOM is loaded
+      document.addEventListener('DOMContentLoaded', function() {
+        uiManager.initialize();
+      });
+    </script>
+  </body>
+</html>
